@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Jack of All — tests</title>
+    <style>
+      body { font: 15px/1.5 system-ui, sans-serif; margin: 24px; background: #f6f4ff; color: #1f1b2e; }
+      h1 { margin: 0 0 8px; }
+      #summary { font-weight: 800; font-size: 1.1rem; margin-bottom: 12px; }
+      .pass { color: #1f7a45; } .fail { color: #c02a2a; }
+      li { margin: 2px 0; } li small { color: #6b6680; }
+      #scratch { display: none; }
+    </style>
+  </head>
+  <body>
+    <h1>Jack of All — automated tests</h1>
+    <div id="summary">Running…</div>
+    <ol id="list"></ol>
+    <pre id="result"></pre>
+    <div id="scratch"></div>
+
+    <script>
+      // Run against an in-memory store so tests never touch real progress.
+      window.__memory = {};
+    </script>
+    <script src="../js/core.js"></script>
+    <script>
+      JOA.storage = {
+        get: (k) => (k in __memory ? __memory[k] : null),
+        set: (k, v) => (__memory[k] = String(v)),
+        remove: (k) => delete __memory[k],
+      };
+    </script>
+    <script src="../js/games/chess.js"></script>
+    <script src="../js/games/sudoku.js"></script>
+    <script src="../js/games/wordProblems.js"></script>
+    <script src="../js/games/patterns.js"></script>
+    <script src="../js/games/memory.js"></script>
+    <script src="../js/games/scramble.js"></script>
+    <script src="../js/games/colorClash.js"></script>
+    <script src="../js/games/sliding.js"></script>
+    <script src="../js/games/lightTrail.js"></script>
+    <script src="../js/games/quickMath.js"></script>
+    <script src="../js/games/oddOneOut.js"></script>
+    <script src="../js/games/numberHunt.js"></script>
+    <script src="../js/games/shapeSpin.js"></script>
+    <script src="../js/games/matchBack.js"></script>
+    <script src="../js/games/oddWord.js"></script>
+    <script src="../js/social.js"></script>
+    <script src="../js/badges.js"></script>
+    <script src="tests.js"></script>
+  </body>
+</html>
