@@ -16,6 +16,7 @@
     { n: 4, shuffle: 400 },
     { n: 5, shuffle: 300 },
     { n: 5, shuffle: 800 }, // Master: fully scrambled 5×5
+    { n: 6, shuffle: 2000 }, // Grandmaster: fully scrambled 6×6
   ];
 
   function neighbors(idx, n) {
@@ -101,7 +102,7 @@
       hist.save();
       let moves = 0, done = false, nextTile = -1, nextUsed = 0;
       const history = [];
-      const target = n === 3 ? Math.min(shuffle, 40) : n === 4 ? Math.min(shuffle, 140) : 260;
+      const target = n === 3 ? Math.min(shuffle, 40) : n === 4 ? Math.min(shuffle, 140) : n === 5 ? 260 : 560;
       const goalGrid = Array.from({ length: n * n }, (_, i) => (i + 1) % (n * n))
         .map((v) => `<span class="${v ? '' : 'e'}">${v || ''}</span>`).join('');
 

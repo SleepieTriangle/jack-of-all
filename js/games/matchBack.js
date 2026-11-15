@@ -8,7 +8,7 @@
   const ADULT_ITEMS = 'BCDFGHJKLMNPRSTV'.split('');
 
   function makeStream(r, L, kid) {
-    const n = L <= 3 ? 1 : L <= 7 ? 2 : 3;
+    const n = L <= 3 ? 1 : L <= 7 ? 2 : L <= 11 ? 3 : 4;
     const pool = (kid ? KID_ITEMS : ADULT_ITEMS).slice(0, kid ? 4 + Math.min(4, Math.floor(L / 2)) : 6 + L);
     const length = 20 + n;
     const seq = [];
@@ -33,7 +33,7 @@
     color: '#be185d',
     tagline: 'Does this one match the one from before? Keep the trail in your head.',
     why: 'The "N-back" task is one of the most studied working-memory exercises — it trains holding and updating information on the fly.',
-    howTo: 'Pictures or letters appear one at a time. Tap <b>MATCH</b> (or press the space bar) when the one on screen is the same as the one <b>N steps back</b>. Levels 1–2: just the one before. Levels 3–6: two back. Level 7 and up: three back! Don\'t tap when it\'s not a match.',
+    howTo: 'Pictures or letters appear one at a time. Tap <b>MATCH</b> (or press the space bar) when the one on screen is the same as the one <b>N steps back</b>. Easy tiers: just the one before. Harder tiers: two, then three, and at Grandmaster even four back! Don\'t tap when it\'s not a match.',
     helpers: ['A <b>trail</b> shows the last few items, with the one to compare highlighted.', 'Items stay on screen <b>longer</b>.'],
     mount(root, ctx) {
       const { rng, level, finish, kid } = ctx;

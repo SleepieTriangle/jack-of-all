@@ -563,3 +563,19 @@ span.btn[aria-disabled='true'] { opacity: 0.55; cursor: not-allowed; }
 .slide-tile.home { background: color-mix(in srgb, var(--c) 70%, var(--good)); }
 .slide-tile.empty { background: transparent; box-shadow: none; cursor: default; }
 .slide-goal { font-size: 0.85rem; color: var(--muted); text-align: center; margin-top: 10px; }
+
+/* ---------- 100 levels: tier boxes + tier progress bar ---------- */
+.lv-dots.tiers span { width: 28px; height: 28px; font-size: 0.95rem; border-radius: 8px; background: var(--surface-2); filter: grayscale(1); opacity: 0.55; }
+.lv-dots.tiers span.on { filter: none; opacity: 1; background: color-mix(in srgb, var(--c) 22%, var(--surface)); }
+.lv-dots.tiers span.cur { background: linear-gradient(to top, color-mix(in srgb, var(--c) 45%, var(--surface)) var(--fill), var(--surface-2) var(--fill)); outline: 2px solid var(--c); outline-offset: -2px; }
+.pg-skill .lv-dots.tiers span { width: 22px; height: 22px; font-size: 0.75rem; }
+.tier-bar { margin-top: 14px; max-width: 460px; }
+.g-start .tier-bar { margin: 4px auto 18px; width: 100%; }
+.tier-bar-head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; font-size: 0.92rem; margin-bottom: 6px; }
+.tier-track { height: 10px; border-radius: 999px; background: var(--surface-2); overflow: hidden; margin-bottom: 8px; }
+.tier-track i { display: block; height: 100%; border-radius: inherit; background: var(--c); }
+.tier-bar .lv-dots { justify-content: flex-start; }
+.unlock-banner.tier-up { background: color-mix(in srgb, var(--c) 16%, var(--surface)); border-color: var(--c); }
+.tier-name { margin-top: -4px !important; }
+.game-card .lv-dots.tiers { gap: 2px; flex-wrap: nowrap; }
+.game-card .lv-dots.tiers span { width: 19px; height: 22px; font-size: 0.68rem; border-radius: 6px; }

@@ -45,7 +45,7 @@
   }
 
   function puzzle(r, L) {
-    const k = L <= 2 ? 4 : L <= 4 ? 5 : L <= 6 ? 6 : L <= 8 ? 7 : L <= 10 ? 8 : 9;
+    const k = L <= 2 ? 4 : L <= 4 ? 5 : L <= 6 ? 6 : L <= 8 ? 7 : L <= 10 ? 8 : L <= 11 ? 9 : 10;
     const a = shape(r, k);
     const isMirror = r.chance(0.5);
     let b = isMirror ? mirror(a) : a;

@@ -99,7 +99,7 @@
       return r ? r.score : null;
     });
     const levels = {};
-    J.gameIds().forEach((id) => (levels[id] = J.clamp(st.unlocked[id] || 1, 1, 10)));
+    J.gameIds().forEach((id) => (levels[id] = J.clamp(st.unlocked[id] || 1, 1, J.MAX_LEVEL)));
     return {
       id: st.fid || profile.id,
       name: profile.name,
@@ -134,7 +134,7 @@
     if (!c || typeof c !== 'object' || typeof c.id !== 'string') throw new Error('That friend code is damaged.');
     const n = (v, lo, hi) => (Number.isFinite(+v) ? J.clamp(Math.round(+v), lo, hi) : lo);
     const levels = {};
-    J.gameIds().forEach((id) => (levels[id] = n(c.levels && c.levels[id], 1, 10)));
+    J.gameIds().forEach((id) => (levels[id] = n(c.levels && c.levels[id], 1, J.MAX_LEVEL)));
     return {
       id: c.id.replace(/[^\w-]/g, '').slice(0, 40),
       name: String(c.name || 'Friend').replace(/[\u0000-\u001f]/g, '').slice(0, 24),

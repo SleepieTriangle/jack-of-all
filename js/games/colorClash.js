@@ -44,7 +44,7 @@
       const nColors = level <= 3 ? 3 : level <= 6 ? 4 : level <= 8 ? 5 : 6;
       const colorSafe = J.getState().settings.colorSafe;
       const palette = (colorSafe ? SAFE_COLORS : COLORS).slice(0, nColors);
-      const baseLimit = Math.round(4200 - (level - 1) * 320); // ms per round
+      const baseLimit = Math.max(900, Math.round(4200 - (level - 1) * 320)); // ms per round (never under 0.9s)
       let limit = helpers ? baseLimit * 1.6 : baseLimit;
       const congruent = Math.max(0.1, 0.45 - level * 0.035);
       const switchRate = level >= 6 ? 0.15 + (level - 6) * 0.05 : 0;

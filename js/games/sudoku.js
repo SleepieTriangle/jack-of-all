@@ -69,7 +69,7 @@
   // Very sparse targets are hard to reach in one try, so for the hardest levels
   // build several boards and keep the one with the fewest clues.
   function generate(rng, clues) {
-    const tries = clues <= 24 ? 10 : clues <= 28 ? 3 : 1;
+    const tries = clues <= 21 ? 24 : clues <= 24 ? 10 : clues <= 28 ? 3 : 1;
     let best = null;
     for (let t = 0; t < tries; t++) {
       const g = generateOnce(rng, clues);
@@ -95,7 +95,7 @@
     return { puzzle, solution };
   }
 
-  const CLUES = [46, 42, 39, 36, 34, 32, 30, 28, 26, 24, 22]; // 11 = Master
+  const CLUES = [46, 42, 39, 36, 34, 32, 30, 28, 26, 24, 22, 21]; // 11 Master, 12 Grandmaster
 
   J.register({
     id: 'sudoku',

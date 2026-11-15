@@ -26,7 +26,8 @@
       case 8: return { n: 6, order: nums(36), mark: false, how: 'Tap 1 to 36 in order.' };
       case 9: return { n: 5, order: trail(13, 12), mark: false, how: 'Alternate: 1, A, 2, B… all the way to 13.' };
       case 10: return { n: 6, order: trail(18, 18), mark: false, how: 'Alternate: 1, A, 2, B… all the way to 18, R.' };
-      default: return { n: 7, order: nums(49).reverse(), mark: false, how: 'Master: count DOWN from 49 to 1.' };
+      case 11: return { n: 7, order: nums(49).reverse(), mark: false, how: 'Master: count DOWN from 49 to 1.' };
+      default: return { n: 8, order: nums(64), mark: false, how: 'Grandmaster: find 1 to 64 in a giant grid.' };
     }
   }
 

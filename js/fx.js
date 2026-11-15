@@ -56,7 +56,9 @@
       if (!enabled()) return;
       try {
         if (SOUNDS[kind]) SOUNDS[kind]();
-        if (BUZZ[kind] && navigator.vibrate) navigator.vibrate(BUZZ[kind]);
+        // Browsers only allow vibration after the person has tapped the page.
+        const tapped = !navigator.userActivation || navigator.userActivation.hasBeenActive;
+        if (BUZZ[kind] && navigator.vibrate && tapped) navigator.vibrate(BUZZ[kind]);
       } catch (e) { /* audio blocked — ignore */ }
     },
   };

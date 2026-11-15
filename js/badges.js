@@ -20,11 +20,12 @@
       Object.keys(s.daily).forEach((k) => { const w = J.weekInfo(J.parseKey(k)).weekIndex; weeks[w] = (weeks[w] || 0) + 1; });
       return Object.values(weeks).some((n) => n >= 7);
     } },
-    { id: 'lv3', icon: '⬆️', name: 'Level Up', desc: 'Unlock Level 3 in any game.', test: (s) => topLevel(s) >= 3 },
-    { id: 'lv6', icon: '🌟', name: 'Rising Star', desc: 'Unlock Level 6 in any game.', test: (s) => topLevel(s) >= 6 },
-    { id: 'master', icon: '👑', name: 'Master', desc: 'Unlock Master (Level 10) in any game.', test: (s) => topLevel(s) >= 10 },
+    { id: 'lv3', icon: '⬆️', name: 'Level Up', desc: 'Reach the Novice tier (Level 11) in any game.', test: (s) => topLevel(s) >= 11 },
+    { id: 'lv6', icon: '🌟', name: 'Rising Star', desc: 'Reach the Talented tier (Level 41) in any game.', test: (s) => topLevel(s) >= 41 },
+    { id: 'master', icon: '👑', name: 'Master', desc: 'Reach the Master tier (Level 81) in any game.', test: (s) => topLevel(s) >= 81 },
+    { id: 'grandmaster', icon: '🏆', name: 'Grandmaster', desc: 'Reach Level 100 in any game.', test: (s) => topLevel(s) >= 100 },
     { id: 'fasttrack', icon: '⚡', name: 'Fast Track', desc: `Skip a level with a ${J.FAST_TRACK_SCORE}+ score.`, test: (s) => (s.stats && s.stats.fastTracks) > 0 },
-    { id: 'wellrounded', icon: '🧠', name: 'Well-Rounded', desc: 'Reach Level 3 in 8 different games.', test: (s) => Object.values(s.unlocked || {}).filter((l) => l >= 3).length >= 8 },
+    { id: 'wellrounded', icon: '🧠', name: 'Well-Rounded', desc: 'Reach Level 11 in 8 different games.', test: (s) => Object.values(s.unlocked || {}).filter((l) => l >= 11).length >= 8 },
     { id: 'allgames', icon: '🃏', name: 'Jack of All Trades', desc: 'Play every game at least once.', test: (s) => gamesPlayed(s) >= J.gameIds().length },
     { id: 'practice25', icon: '🎯', name: 'Practice Makes Perfect', desc: 'Play 25 practice rounds.', test: (s) => Object.values(s.practice).reduce((a, p) => a + (p.plays || 0), 0) >= 25 },
     { id: 'friend', icon: '🤝', name: 'Better Together', desc: 'Add a friend.', test: (s) => Object.keys(s.friends || {}).length >= 1 },

@@ -24,7 +24,7 @@
     }
   }
 
-  const TARGET = [14, 14, 13, 12, 12, 11, 10, 10, 9, 8, 8]; // correct answers for a perfect score (11 = Master)
+  const TARGET = [14, 14, 13, 12, 12, 11, 10, 10, 9, 8, 8, 8]; // correct answers for a perfect score (11 Master, 12 Grandmaster)
 
   J.register({
     id: 'quickMath',

@@ -196,10 +196,8 @@
     if (!st.settings.player) st.settings.player = 'adult';
     const todayKey = J.dateKey(today);
     const todayRes = st.daily[todayKey];
-    const todayRamp = J.levelFor(wk.dow, st.settings);
-    const todayLevel = J.playLevel(g.id, todayRamp, st);
-    const unlocked = J.unlockedLevel(g.id, st);
-    const locks = J.locksOn(st);
+    const todayLevel = J.dailyLevel(g.id, st); // your next level to beat
+    const unlocked = J.topLevel(g.id, st);
     const streak = J.streak(today);
     const name = st.settings.name ? `, ${J.esc(st.settings.name)}` : '';
 
@@ -213,11 +211,10 @@
         const dow = i + 1;
         const key = J.dateKey(d);
         const res = st.daily[key];
-        const ramp = J.levelFor(dow, st.settings);
-        // Done days show the level actually played; others are capped by unlocks.
-        const lvl = res && res.gameId === g.id ? res.level : J.playLevel(g.id, ramp, st);
         const isToday = dow === wk.dow;
         const future = dow > wk.dow;
+        // Done days show the level played; today and catch-up days, your next level.
+        const lvl = res && res.gameId === g.id ? res.level : future ? null : todayLevel;
         let cls = 'day';
         let status = '';
         if (res) {
@@ -236,11 +233,11 @@
         const inner = `
           <span class="day-name">${J.DAY_NAMES[i]}</span>
           <span class="day-date">${d.getDate()}</span>
-          <span class="day-level" ${locks && ramp > lvl && !res ? `title="Pass Level ${unlocked} to play this day at a higher level"` : ''}>Lv ${lvl}${locks && ramp > lvl && !res ? '🔒' : ''}</span>
+          <span class="day-level">${lvl ? `Lv ${lvl}` : dow === 7 ? 'Boss' : 'Next'}</span>
           ${status}`;
         return future
-          ? `<div class="${cls}" title="${J.DAY_TITLES[i]} — unlocks ${J.DAY_NAMES[i]}">${inner}</div>`
-          : `<a class="${cls}" href="#/play/${key}" title="${J.DAY_TITLES[i]}">${inner}</a>`;
+          ? `<div class="${cls}" title="Unlocks ${J.DAY_NAMES[i]}${dow === 7 ? ' — Boss Day' : ''}">${inner}</div>`
+          : `<a class="${cls}" href="#/play/${key}" title="${lvl ? `Level ${lvl} · ${J.tierName(lvl)}` : ''}">${inner}</a>`;
       })
       .join('');
 
@@ -257,10 +254,10 @@
       .map((id) => {
         const s = J.games[id];
         const n = skillCounts[id] || 0;
-        const top = J.unlockedLevel(id, st);
-        return `<a class="skill ${id === g.id ? 'current' : ''} ${n ? 'trained' : ''}" href="#/practice/${id}/${Math.min(todayRamp, top)}" style="--c:${s.color}">
+        const top = J.topLevel(id, st);
+        return `<a class="skill ${id === g.id ? 'current' : ''} ${n ? 'trained' : ''}" href="#/practice/${id}/${top}" style="--c:${s.color}">
           <span class="skill-icon">${s.icon}</span>
-          <span><b>${s.skill}</b><small>${s.name}${n ? ` · ${n}×` : ''}${locks ? ` · Lv ${top}` : ''}</small></span>
+          <span><b>${s.skill}</b><small>${s.name} · Lv ${top}</small></span>
         </a>`;
       })
       .join('');
@@ -271,21 +268,20 @@
         ? `Next week: <b>${nextWeek.icon} ${nextWeek.name}</b> (${nextWeek.skill}). Get ready!`
         : 'Next week\'s game is revealed on Sunday. 🎁';
 
-    const nextLv = Math.min(10, todayLevel + 1);
-    const tryNext = todayLevel < 10 && unlocked >= nextLv
-      ? `<a class="btn ghost" href="#/practice/${g.id}/${nextLv}">Try Level ${nextLv}</a>`
-      : todayLevel < 10 ? `<span class="btn ghost" aria-disabled="true">🔒 Level ${nextLv}</span>` : '';
     const easing = J.struggling(g.id, st);
-    const lockNote = (locks
-      ? `<p class="lock-note">${unlocked >= 10 ? '🏆 Every level unlocked!' : `🔓 Unlocked up to <b>Level ${unlocked}</b>. Score ${J.PASS_SCORE}+ on Level ${unlocked} to unlock Level ${unlocked + 1}.`}${todayRamp > todayLevel && !easing ? ` Today is a Level ${todayRamp} day, so keep passing to catch up!` : ''}</p>`
-      : '') + (easing ? `<p class="lock-note">💪 After a couple of tough rounds, today is one level easier. Pass it and you're back on track!</p>` : '');
+    const tier = J.tierOf(unlocked);
+    const lockNote = `${tierBar(unlocked)}<p class="lock-note">${unlocked >= J.MAX_LEVEL
+      ? '🏆 You\'ve reached Level 100 — Grandmaster!'
+      : `Score <b>${J.PASS_SCORE}+</b> on Level ${unlocked} to unlock Level ${unlocked + 1}.${unlocked % J.TIER_SIZE === 0 ? ` That opens the <b>${J.TIERS[tier]}</b> tier, where puzzles get harder!` : ''}`}</p>` +
+      (easing ? `<p class="lock-note">💪 After a couple of tough rounds, today drops back a tier to Level ${todayLevel}. Pass it and you're back on track!</p>` : '');
+    const playLabel = `Level ${todayLevel} · ${J.tierName(todayLevel)}`;
     const cta = todayRes
       ? `<div class="done-note">✅ Today's done — ${'★'.repeat(J.stars(todayRes.score))} ${todayRes.score}/100</div>
          <div class="btn-row">
-           <a class="btn" href="#/play/${todayKey}">${todayRes.gameId === g.id && todayLevel > todayRes.level ? `▶ Play today at Level ${todayLevel}` : 'Replay to beat it'}</a>
-           ${tryNext}
+           <a class="btn" href="#/play/${todayKey}">${todayRes.gameId === g.id && todayLevel > todayRes.level ? `▶ Keep climbing: ${playLabel}` : 'Replay to beat it'}</a>
+           <a class="btn ghost" href="#/practice/${g.id}/${todayLevel}">Practice more</a>
          </div>${lockNote}`
-      : `<div class="btn-row"><a class="btn big" href="#/play/${todayKey}">▶ Play ${J.DAY_TITLES[wk.dow - 1]} · Level ${todayLevel}</a></div>${lockNote}`;
+      : `<div class="btn-row"><a class="btn big" href="#/play/${todayKey}">▶ Play ${wk.dow === 7 ? 'Boss Day · ' : ''}${playLabel}</a></div>${lockNote}`;
 
     app.innerHTML = `
       <section class="hero" style="--c:${g.color}">
@@ -303,7 +299,7 @@
       <section class="card" style="--c:${g.color}">
         <div class="card-head">
           <h2>Your week</h2>
-          <span class="muted">Gets harder every day. Sunday is Boss Day.</span>
+          <span class="muted">Each day, play your next level. Pass it to unlock the one after.</span>
         </div>
         <div class="week">${tiles}</div>
       </section>
@@ -337,26 +333,26 @@
     if (dwk.weekIndex !== wk.weekIndex || date > today) return go('#/home');
     const g = J.games[J.gameForWeek(wk.weekIndex)];
     const st = J.getState();
-    // The day's level from the weekly ramp, but never above what's unlocked.
-    const level = J.playLevel(g.id, J.levelFor(dwk.dow, st.settings), st);
+    // Your next level to beat (or one tier back after a couple of tough rounds).
+    const level = J.dailyLevel(g.id, st);
     const prev = st.daily[key];
     const attempt = prev && prev.gameId === g.id ? prev.attempts : 0;
-    const seed = `daily:${key}:${g.id}:${attempt}`;
+    const seed = `daily:${key}:${g.id}:${attempt}:${level}`;
     mountGame(g, level, seed, {
-      eyebrow: `${J.DAY_NAMES[dwk.dow - 1]} · ${J.DAY_TITLES[dwk.dow - 1]}`,
+      eyebrow: `${J.DAY_NAMES[dwk.dow - 1]} · ${dwk.dow === 7 ? 'Boss Day' : 'Daily'}`,
       onDone: (score, summary) => {
         const rec = J.recordDaily(key, g.id, level, score);
         const newLevel = J.recordPass(g.id, level, score);
-        const top = J.unlockedLevel(g.id);
-        const nxt = Math.min(10, level + 1);
         showResult(g, score, summary, {
           best: rec.score,
           level,
           gameId: g.id,
           newLevel,
-          primary: { label: 'Back to my week', href: '#/home' },
-          secondary: { label: 'Play again', action: () => go(`#/play/${key}`) },
-          tertiary: level < 10 && top >= nxt ? { label: `Practice Level ${nxt}`, href: `#/practice/${g.id}/${nxt}` } : null,
+          primary: newLevel
+            ? { label: `▶ Keep climbing: Level ${newLevel}`, action: () => go(`#/play/${key}`) }
+            : { label: 'Back to my week', href: '#/home' },
+          secondary: newLevel ? { label: 'Back to my week', href: '#/home' } : { label: 'Try again', action: () => go(`#/play/${key}`) },
+          tertiary: { label: 'Practice other games', href: '#/library' },
         });
       },
     });
@@ -366,7 +362,7 @@
     const g = J.games[id];
     if (!g) return go('#/library');
     const top = J.unlockedLevel(id);
-    level = J.clamp(isNaN(level) ? top : level, 1, 10);
+    level = J.clamp(isNaN(level) ? top : level, 1, J.MAX_LEVEL);
     if (level > top) return renderLocked(g, level, top);
     mountGame(g, level, `practice:${id}:${level}:${Date.now()}`, {
       eyebrow: 'Practice',
@@ -383,7 +379,7 @@
             : { label: 'Play again', action: () => go(`#/practice/${id}/${level}`) },
           secondary: newLevel
             ? { label: `Play Level ${level} again`, action: () => go(`#/practice/${id}/${level}`) }
-            : level < 10 && open ? { label: `Level ${level + 1} →`, href: `#/practice/${id}/${level + 1}` } : null,
+            : level < J.MAX_LEVEL && open ? { label: `Level ${level + 1} →`, href: `#/practice/${id}/${level + 1}` } : null,
           tertiary: { label: 'All games', href: '#/library' },
         });
       },
@@ -403,23 +399,36 @@
           <div style="font-size:3.4rem">🔒</div>
           <h2>Level ${level} is locked</h2>
           <p>Score <b>${J.PASS_SCORE} or more</b> on <b>Level ${top}</b> to unlock Level ${top + 1}. Keep passing each level to work your way up!</p>
-          ${levelDots(top)}
+          ${tierBar(top)}
           <div class="btn-row" style="justify-content:center"><a class="btn big" href="#/practice/${g.id}/${top}">▶ Play Level ${top}</a></div>
         </div>
       </section>`;
   }
 
-  // 1–10 progress dots: filled = unlocked.
+  // Ten tier boxes (Beginner … Grandmaster). Passed tiers are full, the current
+  // tier fills as you climb through it, later tiers are locked.
   function levelDots(top) {
-    return `<div class="lv-dots" aria-label="Unlocked up to level ${top}">${Array.from({ length: 10 }, (_, k) => {
-      const lv = k + 1, tag = J.levelTag(lv);
-      return `<span class="${k < top ? 'on' : ''} ${tag === 'Learning' ? 'learn' : tag === 'Master' ? 'master' : ''}" title="Level ${lv}${tag ? ' · ' + tag : ''}">${k < top ? (tag === 'Master' ? '👑' : lv) : '🔒'}</span>`;
+    const cur = J.tierOf(top);
+    return `<div class="lv-dots tiers" aria-label="Level ${top} of ${J.MAX_LEVEL}, ${J.tierName(top)} tier">${J.TIERS.map((name, k) => {
+      const t = k + 1;
+      const fill = t < cur ? 100 : t === cur ? Math.round((((top - 1) % J.TIER_SIZE) + 1) / J.TIER_SIZE * 100) : 0;
+      return `<span class="${t <= cur ? 'on' : ''} ${t === cur ? 'cur' : ''}" style="--fill:${fill}%" title="Levels ${J.tierStart(t)}–${t * J.TIER_SIZE}: ${name}">${t <= cur ? J.TIER_ICONS[k] : '🔒'}</span>`;
     }).join('')}</div>`;
   }
 
+  // Current tier with a progress bar: "Level 37 · Skilled — 7 of 10".
+  function tierBar(top) {
+    const t = J.tierOf(top), inTier = ((top - 1) % J.TIER_SIZE) + 1;
+    return `<div class="tier-bar">
+      <div class="tier-bar-head"><span>${J.TIER_ICONS[t - 1]} <b>Level ${top}</b> · ${J.TIERS[t - 1]} tier</span><span class="muted small">${inTier} of ${J.TIER_SIZE}${t < 10 ? ` · next: ${J.TIERS[t]}` : ''}</span></div>
+      <div class="tier-track" role="progressbar" aria-valuemin="1" aria-valuemax="${J.MAX_LEVEL}" aria-valuenow="${top}" aria-label="Level ${top} of ${J.MAX_LEVEL}"><i style="width:${(inTier / J.TIER_SIZE) * 100}%"></i></div>
+      ${levelDots(top)}
+    </div>`;
+  }
+
   function mountGame(g, level, seed, opts) {
-    // Beginner helpers are offered on levels 1–2 only.
-    const helpersAvail = level <= J.HELPER_MAX_LEVEL && g.helpers;
+    // Beginner helpers: everyone's first tier, and kids' learning tiers.
+    const helpersAvail = J.helpersAllowed(level) && g.helpers;
     let helpersOn = helpersAvail && J.getState().settings.helpers !== false;
     app.innerHTML = `
       <section class="play" style="--c:${g.color}">
@@ -429,7 +438,7 @@
             <div class="eyebrow">${g.skill} · ${opts.eyebrow}</div>
             <h1>${g.icon} ${g.name}</h1>
           </div>
-          <span class="pill">Level ${level}${J.levelTag(level) ? ` · ${J.levelTag(level)}` : ''}</span>
+          <span class="pill">Level ${level} · ${J.levelTag(level)}</span>
         </div>
         ${helpersAvail ? `
         <div class="helper-bar">
@@ -531,14 +540,21 @@
   // "Level 4 unlocked!" — or what it takes to unlock the next one.
   function unlockBanner(score, o) {
     if (!o.gameId || !J.locksOn()) return '';
+    const after = (lv) => (lv >= J.MAX_LEVEL ? 'Level 100 — you\'re a Grandmaster! 🏆' : `Pass it to open Level ${lv + 1}.`);
+    // Crossing into a new tier gets its own celebration.
+    const newTier = o.newLevel && J.tierOf(o.newLevel) > J.tierOf(o.level);
+    if (newTier) {
+      const t = J.tierOf(o.newLevel);
+      return `<div class="unlock-banner tier-up"><span class="unlock-icon">${J.TIER_ICONS[t - 1]}</span><b>New tier: ${J.TIERS[t - 1]}!</b><span>Level ${o.newLevel} unlocked. Puzzles get harder from here. ${o.newLevel - o.level >= 2 ? `(⚡ ${J.FAST_TRACK_SCORE}+ fast track!)` : ''}</span></div>`;
+    }
     if (o.newLevel && o.newLevel - o.level >= 2) {
-      return `<div class="unlock-banner"><span class="unlock-icon">⚡</span><b>Fast track! Jumped to Level ${o.newLevel}</b><span>A ${J.FAST_TRACK_SCORE}+ score skips a level. ${o.newLevel >= 10 ? 'That\'s the top level — amazing!' : `Pass it to open Level ${o.newLevel + 1}.`}</span></div>`;
+      return `<div class="unlock-banner"><span class="unlock-icon">⚡</span><b>Fast track! Jumped to Level ${o.newLevel}</b><span>A ${J.FAST_TRACK_SCORE}+ score skips a level. ${after(o.newLevel)}</span></div>`;
     }
     if (o.newLevel) {
-      return `<div class="unlock-banner"><span class="unlock-icon">🔓</span><b>Level ${o.newLevel} unlocked!</b><span>${o.newLevel >= 10 ? 'That\'s the top level — amazing!' : `Pass it to open Level ${o.newLevel + 1}.`}</span></div>`;
+      return `<div class="unlock-banner"><span class="unlock-icon">🔓</span><b>Level ${o.newLevel} unlocked!</b><span>${after(o.newLevel)}</span></div>`;
     }
     const top = J.unlockedLevel(o.gameId);
-    if (o.level === top && top < 10 && score < J.PASS_SCORE) {
+    if (o.level === top && top < J.MAX_LEVEL && score < J.PASS_SCORE) {
       return `<div class="unlock-banner locked"><span class="unlock-icon">🔒</span><b>Level ${top + 1} is still locked</b><span>Score ${J.PASS_SCORE} or more on Level ${top} to unlock it. ${score >= J.PASS_SCORE - 15 ? `You got ${score} — so close!` : 'Keep practicing — you\'ve got this!'}</span></div>`;
     }
     return '';
@@ -554,27 +570,25 @@
   // ---------------------------------------------------------------------------
   function renderLibrary() {
     const st = J.getState();
-    const wk = J.weekInfo(J.today());
-    const ramp = J.levelFor(wk.dow, st.settings);
     const locks = J.locksOn(st);
     const cards = J.gameIds()
       .map((id) => {
         const g = J.games[id];
         const p = st.practice[id];
-        const top = J.unlockedLevel(id, st);
-        // Start on the highest unlocked level (or today's level if that's lower).
-        const def = locks ? top : ramp;
+        const top = J.topLevel(id, st);
+        const max = J.unlockedLevel(id, st);
+        const def = top; // start on your highest level
         return `<article class="game-card" style="--c:${g.color}">
           <div class="game-card-top">
             <span class="game-icon">${g.icon}</span>
             <div><div class="eyebrow">${g.skill}</div><h3>${g.name}</h3></div>
           </div>
           <p>${g.tagline}</p>
-          ${locks ? levelDots(top) : ''}
-          ${locks && top === 1 ? '' : `<label class="level-pick">Level <output>${def}</output>
-            <input type="range" min="1" max="${locks ? top : 10}" value="${def}" data-id="${id}" />
-          </label>`}
-          ${locks && top < 10 ? `<p class="lock-hint">🔒 Score ${J.PASS_SCORE}+ on Level ${top} to unlock Level ${top + 1}</p>` : locks ? '<p class="lock-hint">🏆 All levels unlocked</p>' : ''}
+          ${levelDots(top)}
+          ${max === 1 ? '' : `<label class="level-pick">Level <output>${def}</output>
+            <input type="range" min="1" max="${max}" value="${def}" data-id="${id}" />
+          </label><p class="lock-hint tier-name" data-tier-for="${id}">${J.levelTag(def)}</p>`}
+          ${locks && top < J.MAX_LEVEL ? `<p class="lock-hint">🔒 Score ${J.PASS_SCORE}+ on Level ${top} to unlock Level ${top + 1}</p>` : top >= J.MAX_LEVEL ? '<p class="lock-hint">🏆 All 100 levels unlocked</p>' : ''}
           <div class="game-card-foot">
             <a class="btn" data-play="${id}" href="#/practice/${id}/${def}">${locks && top === 1 ? 'Play Level 1' : 'Practice'}</a>
             ${p ? `<span class="muted small">${p.plays} play${p.plays === 1 ? '' : 's'}</span>` : ''}
@@ -585,12 +599,14 @@
     app.innerHTML = `
       <section class="page-head">
         <h1>Practice any skill</h1>
-        <p class="lead">Your weekly game is the main event, but you can warm up on any of them, anytime. Practice puzzles are fresh every time.${locks ? ` Every game starts at Level 1 — score <b>${J.PASS_SCORE} or more</b> to unlock the next level.` : ''}</p>
+        <p class="lead">Your weekly game is the main event, but you can warm up on any of them, anytime. Practice puzzles are fresh every time. Every game has <b>100 levels</b> in 10 tiers, from Beginner to Grandmaster.${locks ? ` Score <b>${J.PASS_SCORE} or more</b> to unlock the next level.` : ''}</p>
       </section>
       <section class="library">${cards}</section>`;
     app.querySelectorAll('input[type=range]').forEach((r) => {
       r.addEventListener('input', () => {
         r.previousElementSibling.textContent = r.value;
+        const tag = app.querySelector(`[data-tier-for="${r.dataset.id}"]`);
+        if (tag) tag.textContent = J.levelTag(+r.value);
         app.querySelector(`[data-play="${r.dataset.id}"]`).href = `#/practice/${r.dataset.id}/${r.value}`;
       });
     });
@@ -635,14 +651,12 @@
     const st = J.getState();
     const player = st.settings.player || 'adult';
     const tune = st.settings.tune || 'normal';
+    const TUNE_HINT = { easier: 'Every tier plays a step easier', normal: 'The standard climb', harder: 'Every tier plays a step harder' };
     const tunes = Object.entries(J.TUNES)
-      .map(([k, label]) => {
-        const lv = J.LEVELS[player][k];
-        return `<label class="band tune ${tune === k ? 'sel' : ''}">
+      .map(([k, label]) => `<label class="band tune ${tune === k ? 'sel' : ''}">
           <input type="radio" name="tune" value="${k}" ${tune === k ? 'checked' : ''} />
-          <b>${label}</b><small>Levels ${lv[0]} → ${lv[6]}</small>
-        </label>`;
-      })
+          <b>${label}</b><small>${TUNE_HINT[k]}</small>
+        </label>`)
       .join('');
     app.innerHTML = `
       <section class="page-head"><h1>Settings</h1></section>
@@ -653,7 +667,7 @@
       </section>
       <section class="card">
         <h2>Who's playing?</h2>
-        <p class="muted">This sets the difficulty automatically. Every day of the week still gets a little harder than the last.</p>
+        <p class="muted">This sets how hard each level plays. Kids start very gently; adults start easy but skip the most basic puzzles.</p>
         <div class="bands players">${playerCards(player, 'player')}</div>
         <h3 class="sub-h">Fine-tune</h3>
         <div class="bands tunes">${tunes}</div>
@@ -670,7 +684,7 @@
         <h2>Play your way</h2>
         <label class="check-row">
           <input type="checkbox" id="smart" ${st.settings.smart !== false ? 'checked' : ''} />
-          <span><b>🧠 Smart difficulty</b><br /><span class="muted">Score ${J.FAST_TRACK_SCORE}+ on your top level to skip ahead a level. Two tough rounds in a row make the next day one level easier.</span></span>
+          <span><b>🧠 Smart difficulty</b><br /><span class="muted">Score ${J.FAST_TRACK_SCORE}+ on your top level to skip ahead a level. Two tough rounds in a row drop the next day back one tier, then you climb again.</span></span>
         </label>
         <label class="check-row">
           <input type="checkbox" id="sound" ${st.settings.sound !== false ? 'checked' : ''} />
@@ -713,9 +727,9 @@
         <h2>How Jack of All works</h2>
         <ul class="howlist">
           <li><b>One game per week.</b> Each week, one of ${J.gameIds().length} brain skills takes the spotlight, in a random order that never repeats a game back-to-back.</li>
-          <li><b>Harder every day.</b> Monday is a warm-up; Sunday is Boss Day.</li>
-          <li><b>Earn your levels.</b> Every game starts at Level 1. Score ${J.PASS_SCORE}+ (2 stars) to unlock the next level.</li>
-          <li><b>Learn, then level up.</b> Levels 1–2 are <b>learning levels</b> with beginner helpers. From Level 3 the challenge steps up, all the way to Level 10 — <b>Master</b> 👑.</li>
+          <li><b>100 levels, 10 tiers.</b> Every game climbs from Level 1 to 100. Each block of 10 levels is a tier — ${J.TIERS.map((t, k) => `${J.TIER_ICONS[k]} ${t}`).join(', ')} — and each tier is a step harder.</li>
+          <li><b>Earn your levels.</b> Each day you play your next level. Score ${J.PASS_SCORE}+ (2 stars) to unlock the one after, so the game gets harder as you keep passing.</li>
+          <li><b>Start where it fits.</b> Kids start with gentle learning tiers and beginner helpers. Adults start easy but not too basic.</li>
           <li><b>Always fresh.</b> Every puzzle is generated automatically from the date. Missed a day? You can catch up any time that week.</li>
           <li><b>Progress stays on this device.</b> Nothing is uploaded.</li>
         </ul>
@@ -866,7 +880,7 @@
     const skills = J.gameIds()
       .map((id) => {
         const g = J.games[id];
-        const top = J.clamp(st.unlocked[id] || 1, 1, 10);
+        const top = J.topLevel(id, st);
         const best = Math.max(0, ...Object.values((st.practice[id] || {}).best || {}), ...Object.values(st.daily).filter((r) => r.gameId === id).map((r) => r.score));
         return `<div class="pg-skill" style="--c:${g.color}">
           <span class="skill-icon">${g.icon}</span>

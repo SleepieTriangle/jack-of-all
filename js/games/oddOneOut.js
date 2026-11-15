@@ -8,7 +8,7 @@
   const HARD = [['O', 'Q'], ['E', 'F'], ['b', 'd'], ['p', 'q'], ['M', 'N'], ['8', 'B'], ['C', 'G'], ['V', 'U'], ['6', '9'], ['m', 'n'], ['P', 'R'], ['5', 'S'], ['h', 'n']];
 
   function board(r, L) {
-    const n = L <= 1 ? 3 : L <= 3 ? 4 : L <= 5 ? 5 : L <= 7 ? 6 : L <= 10 ? 7 : 8;
+    const n = L <= 1 ? 3 : L <= 3 ? 4 : L <= 5 ? 5 : L <= 7 ? 6 : L <= 10 ? 7 : L <= 11 ? 8 : 9;
     let normal, odd, style = '';
     if (L <= 2) [normal, odd] = r.shuffle(r.pick(EASY));
     else if (L <= 5) [normal, odd] = r.shuffle(r.pick(L <= 3 ? EASY.concat(MEDIUM) : MEDIUM));
@@ -17,7 +17,7 @@
       // Top levels: same symbol, the odd one is turned slightly.
       normal = odd = r.pick(['➤', '✈', '☂', '♞', '⚑', '✎', '♪']);
       // Master turns it even less.
-      style = `transform:rotate(${r.pick([-1, 1]) * (L >= 11 ? r.int(8, 13) : r.int(12, 22))}deg)`;
+      style = `transform:rotate(${r.pick([-1, 1]) * (L >= 12 ? r.int(6, 10) : L >= 11 ? r.int(8, 13) : r.int(12, 22))}deg)`;
     }
     return { n, normal, odd, style, at: r.int(0, n * n - 1) };
   }

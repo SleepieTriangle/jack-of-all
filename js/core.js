@@ -120,52 +120,59 @@
   };
 
   // ---------------------------------------------------------------------------
-  // Difficulty. Each game understands levels 1–10. The day of the week ramps the
-  // level up (Monday easiest, Sunday hardest). WHO is playing (kid or adult)
-  // sets the ramp automatically; Easier/Normal/Harder fine-tunes it.
+  // Levels. Every game has 100 LEVELS in 10 TIERS of 10. All levels in a tier
+  // play at the same difficulty; each new tier is a step harder.
+  //
+  //   Games understand a DIFFICULTY from 1 (gentlest) to 12 (Grandmaster).
+  //   Kids:   tier 1 → difficulty 1 … tier 10 → difficulty 10 (tiers 1–2 are
+  //           gentle "learning" tiers with beginner helpers).
+  //   Adults: tier 1 → difficulty 3 … tier 10 → difficulty 12, so Levels 1–20
+  //           are easy but skip the very basic beginner puzzles.
+  //   Easier / Harder shifts every tier one difficulty step down / up.
   // ---------------------------------------------------------------------------
+  J.MAX_LEVEL = 100;
+  J.TIER_SIZE = 10;
+  J.MAX_DIFFICULTY = 12;
+  J.TIERS = ['Beginner', 'Novice', 'Apprentice', 'Skilled', 'Talented', 'Advanced', 'Expert', 'Elite', 'Master', 'Grandmaster'];
+  J.TIER_ICONS = ['🌱', '🌿', '📘', '🎯', '⭐', '🚀', '🔥', '💎', '👑', '🏆'];
   J.PLAYERS = {
-    kid: { label: 'Kid', icon: '🧸', desc: 'Ages about 5–12. Gentle levels, picture-based games and beginner helpers.' },
-    adult: { label: 'Adult', icon: '☕', desc: 'Teens and grown-ups. A steady climb to a tough Sunday.' },
+    kid: { label: 'Kid', icon: '🧸', desc: 'Ages about 5–12. Gentle starting levels, picture-based games and beginner helpers.' },
+    adult: { label: 'Adult', icon: '☕', desc: 'Teens and grown-ups. Starts easy (but not too basic) and climbs to Grandmaster.' },
   };
   J.TUNES = { easier: 'Easier', normal: 'Normal', harder: 'Harder' };
-  J.LEVELS = {
-    // Kids stay on the learning levels (1–2) for most of the week.
-    kid: { easier: [1, 1, 1, 1, 2, 2, 2], normal: [1, 1, 1, 2, 2, 2, 3], harder: [1, 2, 2, 2, 3, 3, 4] },
-    adult: { easier: [1, 2, 3, 3, 4, 5, 6], normal: [2, 3, 4, 5, 6, 7, 8], harder: [4, 5, 6, 7, 8, 9, 10] },
-  };
-  J.HELPER_MAX_LEVEL = 2; // beginner helpers can be switched on at levels 1–2
+  J.TUNE_SHIFT = { easier: -1, normal: 0, harder: 1 };
 
-  // Levels 1–2 are LEARNING levels. From Level 3 the difficulty steps up:
-  // Level 3 plays at difficulty 4, Level 4 at 5 … Level 9 at 10, and Level 10
-  // at the Master difficulty 11. Games receive the difficulty; players see levels.
-  J.LEARNING_LEVELS = 2;
-  J.MAX_DIFFICULTY = 11;
-  J.difficulty = (level) => (level <= J.LEARNING_LEVELS ? level : Math.min(J.MAX_DIFFICULTY, level + 1));
-  J.levelTag = (level) => (level <= J.LEARNING_LEVELS ? 'Learning' : level >= 10 ? 'Master' : '');
+  J.tierOf = (level) => Math.ceil(J.clamp(level, 1, J.MAX_LEVEL) / J.TIER_SIZE); // 1–10
+  J.tierName = (level) => J.TIERS[J.tierOf(level) - 1];
+  J.tierStart = (tier) => (tier - 1) * J.TIER_SIZE + 1;
 
-  // `settings` is the saved settings object.
-  J.levelFor = function (dow, settings) {
+  // The difficulty a level plays at, for this player's settings.
+  J.difficulty = function (level, settings) {
     const s = settings || J.getState().settings;
-    const table = J.LEVELS[s.player === 'kid' ? 'kid' : 'adult'];
-    return (table[s.tune] || table.normal)[dow - 1];
+    const base = s.player === 'kid' ? J.tierOf(level) : J.tierOf(level) + 2;
+    return J.clamp(base + (J.TUNE_SHIFT[s.tune] || 0), 1, J.MAX_DIFFICULTY);
   };
+  // "Learning" = the gentlest difficulties (kids' first two tiers, or Easier).
+  J.isLearning = (level, settings) => J.difficulty(level, settings) <= 2;
+  J.levelTag = (level, settings) => `${J.tierName(level)}${J.isLearning(level, settings) ? ' · Learning' : ''}`;
+  // Beginner helpers: everyone's first tier, plus any learning difficulty.
+  J.helpersAllowed = (level, settings) => J.tierOf(level) === 1 || J.isLearning(level, settings);
   J.isKid = () => J.getState().settings.player === 'kid';
 
   // ---------------------------------------------------------------------------
   // Level locks. Every game starts at Level 1. Passing a level (score 60+, i.e.
-  // 2 stars) unlocks the next one. Daily games never go above the highest
-  // unlocked level. Locks can be switched off in Settings.
+  // 2 stars) unlocks the next one. Each day you play your NEXT level, so the
+  // game gets harder as you keep passing. Locks can be switched off.
   // ---------------------------------------------------------------------------
   J.PASS_SCORE = 60;
   J.locksOn = (st) => (st || J.getState()).settings.locks !== false;
+  J.topLevel = (gameId, st) => J.clamp((st || J.getState()).unlocked[gameId] || 1, 1, J.MAX_LEVEL); // highest reached
   J.unlockedLevel = (gameId, st) => {
     st = st || J.getState();
-    return J.locksOn(st) ? J.clamp(st.unlocked[gameId] || 1, 1, 10) : 10;
+    return J.locksOn(st) ? J.topLevel(gameId, st) : J.MAX_LEVEL;
   };
-  // SMART DIFFICULTY (on by default): two fails in a row on a game → the next
-  // daily plays one level easier; a 90+ score on your top level fast-tracks you
-  // past the next level.
+  // SMART DIFFICULTY (on by default): a 90+ score on your top level skips you
+  // ahead a level; two fails in a row → the next daily drops back one tier.
   J.FAST_TRACK_SCORE = 90;
   J.smartOn = (st) => (st || J.getState()).settings.smart !== false;
   J.struggling = (gameId, st) => {
@@ -173,11 +180,11 @@
     return J.smartOn(st) && (st.form[gameId] || {}).fails >= 2;
   };
 
-  // The level a daily game is actually played at.
-  J.playLevel = (gameId, rampLevel, st) => {
+  // The level today's daily game is played at: your next level to beat.
+  J.dailyLevel = (gameId, st) => {
     st = st || J.getState();
-    const base = Math.min(rampLevel, J.unlockedLevel(gameId, st));
-    return J.struggling(gameId, st) ? Math.max(1, base - 1) : base;
+    const top = J.topLevel(gameId, st);
+    return J.struggling(gameId, st) ? Math.max(1, top - J.TIER_SIZE) : top;
   };
 
   // Record a result; returns the newly unlocked level (number), or null.
@@ -188,9 +195,9 @@
     f.fails = score < J.PASS_SCORE ? f.fails + 1 : 0;
     let unlockedTo = null;
     const cur = s.unlocked[gameId] || 1;
-    if (score >= J.PASS_SCORE && level < 10 && level + 1 > cur) {
+    if (score >= J.PASS_SCORE && level < J.MAX_LEVEL && level + 1 > cur) {
       const jump = J.smartOn(s) && score >= J.FAST_TRACK_SCORE && level === cur ? 2 : 1;
-      unlockedTo = Math.min(10, level + jump);
+      unlockedTo = Math.min(J.MAX_LEVEL, level + jump);
       s.unlocked[gameId] = unlockedTo;
       if (unlockedTo - level === 2) s.stats.fastTracks = (s.stats.fastTracks || 0) + 1;
     }
@@ -202,11 +209,34 @@
   function unlocksFromHistory(s) {
     const u = {};
     const credit = (id, level, score) => {
-      if (score >= J.PASS_SCORE) u[id] = Math.max(u[id] || 1, Math.min(10, level + 1));
+      if (score >= J.PASS_SCORE) u[id] = Math.max(u[id] || 1, Math.min(J.MAX_LEVEL, level + 1));
     };
     Object.values(s.daily).forEach((r) => credit(r.gameId, r.level, r.score));
     Object.entries(s.practice).forEach(([id, p]) => Object.entries(p.best || {}).forEach(([lv, sc]) => credit(id, +lv, sc)));
     return u;
+  }
+
+  // Progress saved on the old 1–10 scale moves to the matching tier of the
+  // 100-level scale (the start of the tier with the same difficulty).
+  function toHundredScale(s) {
+    const kid = s.settings.player === 'kid';
+    const oldDifficulty = (l) => (l <= 2 ? l : Math.min(11, l + 1));
+    const convert = (l) => {
+      l = J.clamp(+l || 1, 1, 10);
+      const tier = J.clamp(kid ? oldDifficulty(l) : oldDifficulty(l) - 2, 1, 10);
+      return J.tierStart(tier);
+    };
+    Object.keys(s.unlocked).forEach((id) => (s.unlocked[id] = convert(s.unlocked[id])));
+    Object.values(s.daily).forEach((r) => (r.level = convert(r.level)));
+    Object.values(s.practice).forEach((p) => {
+      const best = {};
+      Object.entries(p.best || {}).forEach(([lv, sc]) => {
+        const k = convert(lv);
+        best[k] = Math.max(best[k] || 0, sc);
+      });
+      p.best = best;
+    });
+    s.levelScale = 100;
   }
 
   // ---------------------------------------------------------------------------
@@ -260,7 +290,7 @@
     idx.list.push({ id, name: String(name || '').trim().slice(0, 24) || 'Player ' + (idx.list.length + 1), avatar: avatar || J.AVATARS[0], createdAt: Date.now() });
     idx.active = id;
     saveIndex(idx);
-    J.storage.set(dataKey(id), JSON.stringify({ settings: { player: player || 'adult', tune: 'normal', helpers: true } }));
+    J.storage.set(dataKey(id), JSON.stringify({ levelScale: 100, settings: { player: player || 'adult', tune: 'normal', helpers: true } }));
     return id;
   };
   J.switchProfile = function (id) {
@@ -311,7 +341,12 @@
     s.form = s.form || {};
     s.badges = s.badges || {};
     s.stats = s.stats || {};
+    const hadHistory = Object.keys(s.daily).length || Object.keys(s.practice).length || s.unlocked;
     if (!s.unlocked) s.unlocked = unlocksFromHistory(s);
+    if (s.levelScale !== 100) {
+      if (hadHistory) toHundredScale(s); // older 1–10 progress
+      else s.levelScale = 100;
+    }
     return s;
   }
 
@@ -325,7 +360,7 @@
     const p = J.activeProfile();
     if (!p) return;
     const keep = J.getState().settings;
-    J.storage.set(dataKey(p.id), JSON.stringify({ settings: { player: keep.player, tune: 'normal' } }));
+    J.storage.set(dataKey(p.id), JSON.stringify({ levelScale: 100, settings: { player: keep.player, tune: 'normal' } }));
   };
 
   J.recordDaily = function (key, gameId, level, score) {

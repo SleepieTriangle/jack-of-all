@@ -239,7 +239,8 @@
     8: { d: 3, noise: 25, q: true },
     9: { d: 3, noise: 10, q: true },
     10: { d: 3, noise: 0, q: true },
-    11: { d: 4, noise: 0, q: true }, // Master: looks one move further ahead
+    11: { d: 4, noise: 12, q: true }, // Master: looks one move further ahead
+    12: { d: 4, noise: 0, q: true }, // Grandmaster: same depth, never takes a weaker move
   };
 
   function chooseMove(s, level, rng) {

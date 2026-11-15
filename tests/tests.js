@@ -54,14 +54,24 @@
   });
 
   // ---------------------------------------------------------------- levels
-  await test('Levels: 1–2 are learning levels, 3 plays like 4, 10 is Master', () => {
-    eq([1, 2, 3, 4, 9, 10].map(J.difficulty), [1, 2, 4, 5, 10, 11]);
-    eq([J.levelTag(1), J.levelTag(2), J.levelTag(3), J.levelTag(10)], ['Learning', 'Learning', '', 'Master']);
+  await test('Levels: 100 levels in 10 tiers; every level in a tier plays the same', () => {
+    eq([1, 10, 11, 20, 21, 91, 100].map(J.tierOf), [1, 1, 2, 2, 3, 10, 10]);
+    eq([J.tierName(1), J.tierName(45), J.tierName(55), J.tierName(100)], ['Beginner', 'Talented', 'Advanced', 'Grandmaster']);
+    const adult = { player: 'adult', tune: 'normal' };
+    for (let t = 1; t <= 10; t++) {
+      const d = J.difficulty(J.tierStart(t), adult);
+      eq(J.difficulty(t * 10, adult), d, `tier ${t} not uniform`);
+      if (t > 1) assert(d > J.difficulty(J.tierStart(t - 1), adult), `tier ${t} not harder than tier ${t - 1}`);
+    }
   });
-  await test('Levels: Kid ramp stays on learning levels most of the week', () => {
-    const kid = [1, 2, 3, 4, 5, 6, 7].map((d) => J.levelFor(d, { player: 'kid', tune: 'normal' }));
-    assert(kid.filter((l) => l <= 2).length >= 6, 'kid ramp too steep: ' + kid);
-    eq([1, 2, 3, 4, 5, 6, 7].map((d) => J.levelFor(d, { player: 'adult', tune: 'normal' })), [2, 3, 4, 5, 6, 7, 8]);
+  await test('Levels: adults start easy but not basic; kids start with learning tiers', () => {
+    const adult = { player: 'adult', tune: 'normal' }, kid = { player: 'kid', tune: 'normal' };
+    eq([1, 15, 25, 95].map((l) => J.difficulty(l, adult)), [3, 4, 5, 12], 'adult mapping');
+    eq([1, 15, 25, 95].map((l) => J.difficulty(l, kid)), [1, 2, 3, 10], 'kid mapping');
+    assert(!J.isLearning(1, adult) && J.isLearning(15, kid), 'learning flags');
+    assert(J.helpersAllowed(5, adult) && !J.helpersAllowed(15, adult) && J.helpersAllowed(15, kid), 'helper tiers');
+    eq(J.difficulty(1, { player: 'adult', tune: 'harder' }), 4, 'harder shift');
+    eq(J.difficulty(1, { player: 'kid', tune: 'easier' }), 1, 'easier never below 1');
   });
 
   // ---------------------------------------------------------------- profiles
@@ -81,7 +91,21 @@
     const p = J.activeProfile();
     eq(p.name, 'Ana');
     eq(J.getState().settings.player, 'kid');
-    eq(J.unlockedLevel('scramble'), 3, 'past pass not credited');
+    eq(J.unlockedLevel('scramble'), 31, 'past pass not credited on the 100-level scale');
+  });
+
+  await test('Levels: old 1–10 progress moves to the matching tier', () => {
+    const id = newPlayer('adult');
+    const raw = JSON.parse(__memory['jack-of-all:p:' + id]);
+    delete raw.levelScale;
+    raw.unlocked = { chess: 5, sudoku: 1, memory: 10 };
+    raw.daily = { '2026-11-12': { gameId: 'chess', level: 4, score: 70, attempts: 1 } };
+    __memory['jack-of-all:p:' + id] = JSON.stringify(raw);
+    const st = J.getState();
+    eq([st.unlocked.chess, st.unlocked.sudoku, st.unlocked.memory], [31, 1, 81], 'unlock conversion');
+    eq(st.daily['2026-11-12'].level, 21, 'history conversion');
+    // and the difficulty is the same as before the move
+    eq(J.difficulty(31, st.settings), 6);
   });
 
   // ---------------------------------------------------------------- locks & smart difficulty
@@ -91,24 +115,25 @@
     eq(J.recordPass('sudoku', 1, 59), null, 'a fail unlocked something');
     eq(J.recordPass('sudoku', 1, 70), 2);
     eq(J.unlockedLevel('sudoku'), 2);
-    eq(J.playLevel('sudoku', 8), 2, 'daily went above unlocked');
+    eq(J.dailyLevel('sudoku'), 2, 'daily is not your next level');
+    eq(J.recordPass('sudoku', 1, 99), null, 'replaying a passed level unlocked again');
   });
   await test('Smart: 90+ on your top level fast-tracks two levels', () => {
     newPlayer();
     eq(J.recordPass('chess', 1, 95), 3);
     assert(J.getState().stats.fastTracks === 1, 'fast track not counted');
   });
-  await test('Smart: two fails in a row make the next day one level easier', () => {
+  await test('Smart: two fails in a row drop the next day back one tier', () => {
     newPlayer();
     const s = J.getState();
-    s.unlocked.memory = 5;
+    s.unlocked.memory = 25;
     J.saveState(s);
-    eq(J.playLevel('memory', 6), 5);
-    J.recordPass('memory', 5, 30);
-    J.recordPass('memory', 5, 40);
-    eq(J.playLevel('memory', 6), 4, 'did not ease off');
-    J.recordPass('memory', 4, 80);
-    eq(J.playLevel('memory', 6), 5, 'did not recover after a pass');
+    eq(J.dailyLevel('memory'), 25);
+    J.recordPass('memory', 25, 30);
+    J.recordPass('memory', 25, 40);
+    eq(J.dailyLevel('memory'), 15, 'did not drop back a tier');
+    J.recordPass('memory', 15, 80);
+    eq(J.dailyLevel('memory'), 25, 'did not recover after a pass');
   });
   await test('Locks off: every level open; smart off: no fast track', () => {
     newPlayer();
@@ -116,7 +141,7 @@
     s.settings.locks = false;
     s.settings.smart = false;
     J.saveState(s);
-    eq(J.unlockedLevel('chess'), 10);
+    eq(J.unlockedLevel('chess'), 100);
     J.recordPass('patterns', 1, 99);
     eq(J.getState().unlocked.patterns, 2);
   });
@@ -176,13 +201,13 @@
     assert(threw, 'own code accepted');
   });
   await test('Friends: untrusted codes are cleaned', async () => {
-    const evil = await J.encodeCode({ t: 'friend', v: 1, card: { id: 'x<y>"z', name: '<img src=x onerror=alert(1)>'.repeat(3), avatar: '<b>', streak: 1e9, scores: [500, -3, 'a', null], levels: { chess: 99 } } });
+    const evil = await J.encodeCode({ t: 'friend', v: 1, card: { id: 'x<y>"z', name: '<img src=x onerror=alert(1)>'.repeat(3), avatar: '<b>', streak: 1e9, scores: [500, -3, 'a', null], levels: { chess: 999 } } });
     const c = await J.readFriendCode(evil);
     assert(c.name.length <= 24, 'name not truncated');
     assert(!/[<>"]/.test(c.id), 'id not cleaned');
     eq(c.avatar, '🙂');
     eq(c.scores, [100, 0, 0, null]);
-    eq(c.levels.chess, 10);
+    eq(c.levels.chess, 100);
     assert(c.streak <= 100000, 'streak not clamped');
   });
   await test('Codes: garbage is rejected with a friendly message', async () => {
@@ -213,7 +238,7 @@
     });
   });
   await test('Word Problems: 8 valid, unique questions at every difficulty', () => {
-    for (let L = 1; L <= 11; L++) for (let s = 0; s < 25; s++) {
+    for (let L = 1; L <= 12; L++) for (let s = 0; s < 25; s++) {
       const qs = J._wordProblems.makeSet(J.makeRng(`wp${L}:${s}`), L, 8, null);
       eq(qs.length, 8, `L${L} short round`);
       eq(new Set(qs.map((q) => q.prompt + (q.visual || ''))).size, 8, `L${L} duplicate`);
@@ -224,7 +249,7 @@
     }
   });
   await test('Patterns: no repeated puzzle within a round, any difficulty', () => {
-    for (let L = 1; L <= 11; L++) for (let s = 0; s < 40; s++) {
+    for (let L = 1; L <= 12; L++) for (let s = 0; s < 40; s++) {
       const ps = J._patterns.makeRound(J.makeRng(`p${L}:${s}`), L, 10, memHist());
       eq(new Set(ps.map((p) => p.key)).size, 10, `L${L} repeat`);
       ps.forEach((p) => assert(p.options.includes(p.answer), 'answer missing from options'));
@@ -240,21 +265,21 @@
     const where = {};
     Object.entries(J._oddWord.CATS).forEach(([id, [, ws]]) => ws.split(' ').forEach((w) => (where[w.toLowerCase()] = (where[w.toLowerCase()] || 0) + 1)));
     eq(Object.entries(where).filter(([, n]) => n > 1), [], 'shared words');
-    for (let L = 1; L <= 11; L++) for (let s = 0; s < 30; s++) {
+    for (let L = 1; L <= 12; L++) for (let s = 0; s < 30; s++) {
       const q = J._oddWord.question(J.makeRng(`ow${L}:${s}`), L, s % 2 === 0);
       assert(!J._oddWord.CATS[q.a][1].split(' ').includes(q.odd), 'odd word belongs to the group');
     }
   });
   await test('Shape Spin: "same" is always a turn, "mirror" never is', () => {
     const S = J._shapeSpin;
-    for (let L = 1; L <= 11; L++) for (let s = 0; s < 40; s++) {
+    for (let L = 1; L <= 12; L++) for (let s = 0; s < 40; s++) {
       const p = S.puzzle(J.makeRng(`ss${L}:${s}`), L);
       const same = S.canon(p.b) === S.canon(p.a);
       assert(p.isMirror ? !same : same, `L${L} mislabeled`);
     }
   });
   await test('Quick Math: whole-number answers; never negative in Kid mode', () => {
-    for (let L = 1; L <= 11; L++) {
+    for (let L = 1; L <= 12; L++) {
       const g = J._quickMath.gen(J.makeRng('qm' + L), L, true);
       for (let s = 0; s < 400; s++) {
         const [t, a] = g();
@@ -263,17 +288,24 @@
     }
   });
   await test('Number Hunt: every grid holds exactly its items', () => {
-    for (let L = 1; L <= 11; L++) {
+    for (let L = 1; L <= 12; L++) {
       const c = J._numberHunt.sequence(L);
       eq(c.order.length, c.n * c.n, `L${L}`);
     }
   });
 
+  await test('Grandmaster (12) is harder than Master (11) in the table-driven games', () => {
+    eq(J._numberHunt.sequence(12).order.length > J._numberHunt.sequence(11).order.length, true, 'number hunt');
+    eq(J._scramble.WORDS[10].length >= 10, true, '10-letter words');
+    const g = J._sudoku.generate(J.makeRng('gm'), 21);
+    assert(g.puzzle.filter(Boolean).length <= 23, 'grandmaster sudoku too full: ' + g.puzzle.filter(Boolean).length);
+  });
+
   // ---------------------------------------------------------------- every game loads
-  await test('Every game loads at every level (15 games × 11 difficulties)', async () => {
+  await test('Every game loads at every difficulty (15 games × 12)', async () => {
     newPlayer();
     const box = document.getElementById('scratch');
-    for (const id of J.gameIds()) for (let L = 1; L <= 11; L++) {
+    for (const id of J.gameIds()) for (let L = 1; L <= 12; L++) {
       let ctrl;
       try {
         ctrl = J.games[id].mount(box, { seed: `t:${id}:${L}`, rng: J.makeRng(`t:${id}:${L}`), level: L, displayLevel: L, kid: L % 2 === 0, helpers: L <= 2, finish() {} });

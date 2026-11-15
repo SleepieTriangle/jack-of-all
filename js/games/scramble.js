@@ -9,6 +9,7 @@
     6: 'animal banana basket bridge button candle carrot castle cheese circle cookie dragon father flower guitar hammer island jungle kitten ladder little mirror monkey number orange pencil people pickle planet pocket puzzle rabbit rocket school summer sunset teapot tomato turtle violin window winter yellow bottle butter cactus'.split(' '),
     7: 'balloon blanket cabbage captain chicken compass cupcake diamond dolphin freedom giraffe harmony holiday kitchen lantern library monster morning mystery octopus pancake penguin picture popcorn pumpkin rainbow science thunder tornado unicorn vampire volcano weather welcome journey curtain fortune history gallery'.split(' '),
     8: 'airplane alphabet backpack baseball birthday building calendar campfire children dinosaur elephant envelope exercise festival football hospital keyboard kangaroo language mountain notebook painting question sandwich squirrel sunshine treasure umbrella vacation magician marathon hedgehog lemonade broccoli dumpling'.split(' '),
+    10: 'strawberry basketball friendship restaurant helicopter watermelon skateboard motorcycle playground lighthouse toothbrush everything incredible experience microphone television dictionary photograph adventurer fingernail'.split(' '),
     9: 'adventure chocolate pineapple butterfly crocodile detective fireworks hamburger invention telescope wonderful waterfall astronaut celebrate beautiful knowledge scientist'.split(' '),
   };
   const ALL = new Set(Object.values(WORDS).flat());
@@ -39,7 +40,7 @@
     stamp: '✉️ you stick it on a letter', tooth: '🦷', towel: '🛁 dry off with it after a bath', truck: '🚚', tulip: '🌷',
     wagon: '🛒 you pull it along on wheels', watch: '⌚',
   };
-  const LENGTHS = [[4], [4, 5], [5], [5, 6], [6], [6, 7], [7], [7, 8], [8], [8, 9], [9]]; // 11 = Master
+  const LENGTHS = [[4], [4, 5], [5], [5, 6], [6], [6, 7], [7], [7, 8], [8], [8, 9], [9], [9, 10]]; // 11 Master, 12 Grandmaster
   const sorted = (w) => w.split('').sort().join('');
 
   // Pick words that are new to this round and to this player. When every word of
