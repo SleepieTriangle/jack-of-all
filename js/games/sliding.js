@@ -87,7 +87,7 @@
     color: '#0f9fb0',
     tagline: 'Slide the tiles back into order, 1 to the end.',
     why: 'Planning moves in your head trains spatial reasoning, planning and visual problem-solving.',
-    howTo: 'Tap a tile next to the empty space to slide it in (tapping any tile in the same row or column slides the whole line). Arrow keys work too. Arrange the numbers in order, left to right, top to bottom, with the gap in the bottom-right corner. Fewer moves = higher score.',
+    howTo: 'Tap a tile next to the empty space to slide it in (tapping any tile in the same row or column slides the whole line). On a phone you can also swipe; arrow keys work too. Arrange the numbers in order, left to right, top to bottom, with the gap in the bottom-right corner. Fewer moves = higher score.',
     helpers: [
       'Tiles that can move have a <b>dashed outline</b>; tiles already in the right spot turn green.',
       'A small picture shows what the finished puzzle looks like.',
@@ -179,6 +179,20 @@
         }
       }
       document.addEventListener('keydown', onKey);
+
+      // Phones: swipe anywhere on the board to slide a tile into the gap.
+      let sx = 0, sy = 0;
+      grid.addEventListener('touchstart', (e) => {
+        sx = e.touches[0].clientX;
+        sy = e.touches[0].clientY;
+      }, { passive: true });
+      grid.addEventListener('touchend', (e) => {
+        const dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+        if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return; // a tap, not a swipe
+        e.preventDefault(); // don't also fire a tap on the tile
+        const key = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'ArrowRight' : 'ArrowLeft') : dy > 0 ? 'ArrowDown' : 'ArrowUp';
+        onKey({ key, preventDefault() {} });
+      });
 
       const nextBtn = root.querySelector('.next-btn');
       if (nextBtn) {

@@ -111,6 +111,7 @@
               <input class="g-input" aria-label="Your word" autocapitalize="off" spellcheck="false" maxlength="${word.length}" />
               <div class="btn-row" style="justify-content:center">
                 <button class="btn" type="submit">Check</button>
+                <button class="btn ghost small" type="button" data-a="back" aria-label="Delete last letter">⌫</button>
                 <button class="btn ghost small" type="button" data-a="clear">Clear</button>
                 <button class="btn ghost small" type="button" data-a="shuffle">🔀 Shuffle</button>
                 <button class="btn ghost small" type="button" data-a="hint">💡 Hint</button>
@@ -154,7 +155,7 @@
           if (!t || t.classList.contains('used')) return;
           input.value += letters[+t.dataset.k];
           syncTiles();
-          input.focus();
+          J.autoFocus(input);
         });
         input.addEventListener('input', syncTiles);
         root.querySelector('.ans-form').addEventListener('submit', (e) => {
@@ -176,6 +177,7 @@
         });
         root.querySelector('.btn-row').addEventListener('click', (e) => {
           const a = e.target.dataset.a;
+          if (a === 'back') input.value = input.value.slice(0, -1);
           if (a === 'clear') input.value = '';
           if (a === 'shuffle') letters = rng.shuffle(letters);
           if (a === 'hint') {
@@ -190,12 +192,12 @@
           }
           if (a === 'skip') return done(false, `The word was ${word.toUpperCase()}.`);
           syncTiles();
-          input.focus();
+          J.autoFocus(input);
         });
         if (helpers) input.value = word[0]; // start with the first letter
         syncTiles();
         syncHelpers();
-        input.focus();
+        J.autoFocus(input);
       }
 
       function syncHelpers() {

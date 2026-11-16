@@ -767,7 +767,7 @@
         if (q.kind === 'input') {
           const form = root.querySelector('.ans-form');
           const input = form.querySelector('input');
-          input.focus();
+          J.autoFocus(input);
           form.addEventListener('submit', (e) => {
             e.preventDefault();
             const raw = input.value.replace(/[$,\s]|min(utes)?/gi, '');

@@ -579,3 +579,140 @@ span.btn[aria-disabled='true'] { opacity: 0.55; cursor: not-allowed; }
 .tier-name { margin-top: -4px !important; }
 .game-card .lv-dots.tiers { gap: 2px; flex-wrap: nowrap; }
 .game-card .lv-dots.tiers span { width: 19px; height: 22px; font-size: 0.68rem; border-radius: 6px; }
+
+/* ======================================================================
+   Phone friendliness
+   ====================================================================== */
+.topbar { padding-top: max(10px, env(safe-area-inset-top)); padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+.nav { margin-left: auto; }
+.top-actions { display: flex; align-items: center; gap: 6px; }
+.who { display: inline-flex; align-items: center; gap: 6px; text-decoration: none; font-weight: 700; font-size: 0.92rem; border-radius: 999px; margin-left: 0; }
+.helper-more summary { cursor: pointer; font-size: 0.85rem; font-weight: 700; color: var(--muted); margin-top: 4px; }
+.helper-more .helper-list { display: block; }
+.helper-bar:not(.on) .helper-more { display: none; }
+
+/* touch behaviour */
+html { -webkit-tap-highlight-color: transparent; }
+body { overscroll-behavior-y: contain; }
+button, a, label, summary, input, .choice { touch-action: manipulation; }
+.game-root { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+.game-root input, .game-root textarea { -webkit-user-select: text; user-select: text; }
+.slide-grid { touch-action: none; }
+.modal-card { max-height: calc(100dvh - 32px); overflow-y: auto; }
+@media (pointer: coarse) {
+  .btn, .btn.small { min-height: 44px; }
+  .btn.link { min-height: 44px; padding: 6px 12px; }
+  .helper-switch { min-height: 44px; }
+  .helper-more summary { min-height: 36px; display: flex; align-items: center; }
+  .howto summary { min-height: 32px; display: flex; align-items: center; }
+  .level-pick input { min-height: 44px; }
+  .back { width: 46px; height: 46px; }
+  /* 16px text boxes stop iPhones zooming in when you tap them */
+  .text-input, .code-box, .g-input, input[type='time'] { font-size: 16px; }
+  .avatar-opt span { width: 48px; height: 48px; }
+}
+@media (hover: none) {
+  a.day:hover, .btn:hover { transform: none; filter: none; }
+}
+
+/* phones: bottom tab bar + full-screen games */
+@media (max-width: 640px) {
+  .nav {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; margin: 0;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+    background: var(--surface); border-top: 1px solid var(--line);
+    padding: 4px max(4px, env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) max(4px, env(safe-area-inset-left));
+    box-shadow: 0 -4px 18px rgba(40, 20, 120, 0.08);
+  }
+  .nav a { flex-direction: column; gap: 1px; padding: 6px 2px; border-radius: 12px; min-height: 52px; justify-content: center; font-size: 0.68rem; }
+  .nav a.active { background: color-mix(in srgb, var(--brand) 12%, transparent); color: var(--brand); box-shadow: none; }
+  .nav .nav-ico { display: block; font-size: 1.35rem; line-height: 1.1; }
+  .nav .nav-txt { display: block; }
+  body { padding-bottom: calc(68px + env(safe-area-inset-bottom)); }
+  .topbar { padding-bottom: 8px; }
+  .brand-name { display: inline; font-size: 1.1rem; }
+  .update-bar { top: 52px; }
+  .container { padding: 14px max(12px, env(safe-area-inset-right)) 28px max(12px, env(safe-area-inset-left)); }
+  .card, .hero { padding: 16px; }
+  .stat { padding: 12px; }
+  .stat-num { font-size: 1.5rem; }
+  .modal { align-items: end; padding: 0; }
+  .modal-card { width: 100%; border-radius: 24px 24px 0 0; padding-bottom: calc(24px + env(safe-area-inset-bottom)); animation: sheet 0.28s ease-out; }
+  @keyframes sheet { from { transform: translateY(40%); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  /* Game screens: no app bars, slim header, board edge to edge */
+  body.in-game { padding-bottom: env(safe-area-inset-bottom); }
+  body.in-game .topbar, body.in-game .nav { display: none; }
+  body.in-game .container { padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) 12px max(8px, env(safe-area-inset-left)); }
+  .play-head { gap: 8px; }
+  .play-head .eyebrow { font-size: 0.68rem; }
+  .play-title h1 { font-size: 1.25rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .play-head .pill { font-size: 0.75rem; padding: 4px 9px; }
+  .play-meta { display: flex; gap: 8px; align-items: stretch; margin: 8px 0; }
+  .helper-bar { margin: 8px 0 0; padding: 2px 12px; }
+  .helper-bar .helper-switch { font-size: 0.9rem; }
+  .howto { margin: 8px 0; padding: 4px 12px; }
+  .game-root { padding: 12px 8px; border-radius: 14px; }
+  .g-bar { margin-bottom: 8px; }
+  .g-progress { margin-bottom: 10px; }
+  .g-question { font-size: 1.08rem; margin-bottom: 12px; }
+  .g-start { padding: 18px 6px; }
+
+  /* chess: status above the board, tools right under it */
+  .chess-wrap { flex-direction: column; gap: 8px; align-items: stretch; }
+  .chess-side { display: contents; }
+  .chess-status { order: -1; padding: 8px 12px; font-size: 1rem; }
+  .chess-board { width: 100%; border-radius: 6px; }
+  .chess-moves { max-height: 64px; }
+  .chess-caps { font-size: 1.1rem; min-height: 1.3em; }
+
+  /* sudoku: full-width grid, one-row keypad */
+  .sudoku-wrap { gap: 10px; }
+  .sudoku { width: 100%; }
+  .sudoku-side { width: 100%; gap: 8px; }
+  .numpad { grid-template-columns: repeat(5, 1fr); gap: 5px; }
+  .numpad button { aspect-ratio: auto; height: 46px; border-radius: 10px; font-size: 1.3rem; }
+
+  .qm-pad { grid-template-columns: repeat(3, minmax(72px, 1fr)); width: min(100%, 300px); }
+  .qm-pad button { height: 52px; }
+  .choices, .wp-choices, .ow-words { grid-template-columns: 1fr 1fr; }
+  .choice { padding: 14px 8px; }
+  .cc-word { height: 110px; }
+  .cc-btn { padding: 16px 4px; }
+  .cc-btn kbd, .ss-choices small { display: none; }
+  .mem-grid { gap: 5px; }
+  .oo-grid, .nh-grid { gap: 4px; }
+  .ss-box { width: 142px; height: 142px; }
+  .ss-box svg { width: 124px; height: 124px; }
+  .lt-grid { width: min(100%, 320px); }
+  .mb-stage { height: 150px; }
+  .mb-btn { width: 100%; min-height: 64px; font-size: 1.3rem; }
+  .tiles { gap: 6px; }
+  .tile { width: 46px; height: 52px; font-size: 1.45rem; }
+  .lb-row { padding: 8px; }
+}
+@media (max-width: 640px) and (max-height: 700px) {
+  /* short phones: trim a little more so boards still fit */
+  .play-head .eyebrow { display: none; }
+  .cc-word { height: 90px; }
+  .numpad button { height: 42px; }
+}
+.helper-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; column-gap: 12px; }
+.helper-more[open] { flex-basis: 100%; }
+.helper-more summary { margin-top: 0; }
+@media (max-width: 640px) {
+  /* a blurred header would trap the fixed tab bar inside it; use a solid bar on phones */
+  .topbar { -webkit-backdrop-filter: none; backdrop-filter: none; background: var(--bg); }
+}
+@media (max-width: 640px) {
+  /* compact home card: small icon in the corner, no long description */
+  .hero { flex-direction: row; position: relative; align-items: flex-start; }
+  .hero-art { position: absolute; top: 12px; right: 14px; font-size: 2.6rem; }
+  .hero .eyebrow { padding-right: 56px; }
+  .hero h1 { font-size: 1.45rem; padding-right: 40px; }
+  .hero .lead { font-size: 1rem; }
+  .hero .why { display: none; }
+  .hero .btn.big { width: 100%; padding: 13px 14px; font-size: 0.95rem; text-align: center; }
+  .welcome .hero-art { display: none; }
+  .card-head .muted { font-size: 0.85rem; }
+}

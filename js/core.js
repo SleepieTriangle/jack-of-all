@@ -505,6 +505,13 @@
   // ---------------------------------------------------------------------------
   // Small helpers shared by games.
   // ---------------------------------------------------------------------------
+  // Phones and tablets: don't auto-focus text boxes (it pops the keyboard up
+  // over the game). People tap the box when they want to type.
+  J.isTouch = () => typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+  J.autoFocus = (el) => {
+    if (el && !J.isTouch()) el.focus();
+  };
+
   J.esc = (s) =>
     String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   J.fmtTime = (sec) => `${Math.floor(sec / 60)}:${pad(Math.floor(sec % 60))}`;

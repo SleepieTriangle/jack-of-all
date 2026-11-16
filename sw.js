@@ -1,6 +1,6 @@
 /* Jack of All — service worker. Makes the app work offline after the first visit.
    Bump VERSION whenever you ship changes so players get the new files. */
-const VERSION = 'v12';
+const VERSION = 'v13';
 const APP_CACHE = `joa-app-${VERSION}`;
 const FONT_CACHE = 'joa-fonts';
 

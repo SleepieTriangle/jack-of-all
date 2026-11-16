@@ -25,6 +25,8 @@
       a.classList.toggle('active', active);
     });
     renderWho();
+    // Game screens are full-screen on phones (CSS hides the app bars).
+    document.body.classList.toggle('in-game', parts[0] === 'play' || parts[0] === 'practice');
     window.scrollTo(0, 0);
     // No player yet → create one first (a friend link is remembered for after).
     if (!J.activeProfile() && parts[0] !== 'new-player') {
@@ -120,7 +122,7 @@
       }
       go('#/home');
     });
-    form.querySelector('input[name=name]').focus();
+    J.autoFocus(form.querySelector('input[name=name]'));
   }
 
   // "Who's playing today?" — shown once per visit when there are several players.
@@ -446,7 +448,8 @@
             <span class="sw-track"><span class="sw-knob"></span></span>
             <span>🛟 Beginner helpers</span>
           </button>
-          <ul class="helper-list">${g.helpers.map((h) => `<li>${h}</li>`).join('')}</ul>
+          <details class="helper-more" ${J.isTouch() || innerWidth < 700 ? '' : 'open'}><summary>What helps?</summary>
+            <ul class="helper-list">${g.helpers.map((h) => `<li>${h}</li>`).join('')}</ul></details>
         </div>` : ''}
         <details class="howto"><summary>How to play</summary><div>${g.howTo}</div></details>
         <div class="game-root"></div>

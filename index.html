@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Jack of All</title>
     <meta name="description" content="A new brain game every week. Gets harder every day. Keeps every part of your mind sharp." />
     <link rel="manifest" href="manifest.webmanifest" />
@@ -13,6 +13,7 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="format-detection" content="telephone=no" />
     <meta name="apple-mobile-web-app-title" content="Jack of All" />
     <link rel="preload" href="fonts/nunito-latin.woff2" as="font" type="font/woff2" crossorigin />
     <link rel="preload" href="fonts/fredoka-latin.woff2" as="font" type="font/woff2" crossorigin />
@@ -32,9 +33,11 @@
         <a href="#/progress" data-nav="progress"><span class="nav-ico" aria-hidden="true">📈</span><span class="nav-txt">Progress</span></a>
         <a href="#/friends" data-nav="friends"><span class="nav-ico" aria-hidden="true">🤝</span><span class="nav-txt">Friends</span></a>
         <a href="#/settings" data-nav="settings"><span class="nav-ico" aria-hidden="true">⚙️</span><span class="nav-txt">Settings</span></a>
+      </nav>
+      <div class="top-actions">
         <button class="install-btn" id="install-btn" hidden>⬇ Install</button>
         <a class="who" id="who" href="#/players" hidden></a>
-      </nav>
+      </div>
     </header>
 
     <div class="update-bar" id="update-bar" role="status" hidden>
